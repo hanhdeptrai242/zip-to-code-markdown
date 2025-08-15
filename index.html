@@ -1,544 +1,679 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>ZIP to Markdown Converter Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-        /* Custom styles */
-        /* Style cho trạng thái indeterminate của checkbox */
-        input[type="checkbox"]:indeterminate {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 16 16'%3e%3cpath stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 8h8'/%3e%3c/svg%3e");
-            background-color: #4f46e5; /* indigo-600 */
-            border-color: #4f46e5;
+        input[type="checkbox"]:indeterminate{
+            background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 16 16'%3e%3cpath stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 8h8'/%3e%3c/svg%3e");
+            background-color:#4f46e5;border-color:#4f46e5
         }
-
-        /* Style cho cây thư mục */
-        #file-tree ul {
-            padding-left: 1.25rem; /* 20px */
-            list-style: none;
-        }
-        #file-tree .folder-label {
-            cursor: pointer;
-            user-select: none; /* Ngăn bôi đen chữ khi click nhanh */
-        }
-        #file-tree .toggle-icon {
-            display: inline-block;
-            width: 1rem;
-            font-family: monospace;
-            font-weight: bold;
-        }
-        
-        /* Custom scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #1f2937; /* gray-800 */
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #4b5563; /* gray-600 */
-            border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #6b7280; /* gray-500 */
-        }
+        #file-tree ul{padding-left:1.25rem;list-style:none}
+        #file-tree .folder-label{cursor:pointer;user-select:none}
+        #file-tree .toggle-icon{display:inline-block;width:1rem;font-family:monospace;font-weight:bold}
+        .custom-scrollbar::-webkit-scrollbar{width:8px}
+        .custom-scrollbar::-webkit-scrollbar-track{background:#1f2937}
+        .custom-scrollbar::-webkit-scrollbar-thumb{background:#4b5563;border-radius:4px}
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover{background:#6b7280}
+        #file-tree li.opacity-60{opacity:.6}
+        .input-dark{background:#0f172a;border:1px solid #334155;color:#e5e7eb;border-radius:.5rem;padding:.5rem .75rem}
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200 font-sans p-4 sm:p-6 md:p-8">
+<div class="max-w-7xl mx-auto">
+    <header class="text-center mb-8">
+        <h1 class="text-3xl sm:text-4xl font-bold text-white">📦 ZIP & Folder to Markdown Pro</h1>
+        <p class="text-gray-400 mt-2">Tải lên file ZIP hoặc quét thư mục, tùy chỉnh và tạo file Markdown cho AI.</p>
+    </header>
 
-    <div class="max-w-7xl mx-auto">
-        <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-white">📦 ZIP & Folder to Markdown Pro</h1>
-            <p class="text-gray-400 mt-2">Tải lên file ZIP hoặc quét thư mục, tùy chỉnh và tạo file Markdown cho AI.</p>
-        </header>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-            <div class="bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col h-[85vh]">
-                <div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <label for="zip-file-input" class="w-full cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg inline-block text-center transition duration-300">
-                           📦 Chọn File .ZIP
-                        </label>
-                        <button id="folder-scan-btn" class="w-full cursor-pointer bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg inline-block text-center transition duration-300">
-                           📂 Quét thư mục trên máy
-                        </button>
-                    </div>
-                    <input type="file" id="zip-file-input" class="hidden" accept=".zip">
-                    <input type="file" id="folder-input" class="hidden" webkitdirectory directory multiple>
-                    
-                    <p id="file-name" class="text-gray-400 mt-3 text-center text-sm truncate"></p>
-                    
-                    <div id="progress-container" class="w-full bg-gray-700 rounded-full h-2.5 mt-3 hidden">
-                        <div id="progress-bar" class="bg-indigo-500 h-2.5 rounded-full" style="width: 0%"></div>
-                    </div>
-                     <p id="progress-text" class="text-center text-sm text-gray-400 mt-1"></p>
-
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- LEFT -->
+        <div class="bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col h-[85vh]">
+            <div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label for="zip-file-input" class="w-full cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg inline-block text-center transition duration-300">📦 Chọn File .ZIP</label>
+                    <button id="folder-scan-btn" class="w-full cursor-pointer bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg inline-block text-center transition duration-300">📂 Quét thư mục trên máy</button>
                 </div>
+                <input type="file" id="zip-file-input" class="hidden" accept=".zip">
+                <input type="file" id="folder-input" class="hidden" webkitdirectory directory multiple>
+                <p id="file-name" class="text-gray-400 mt-3 text-center text-sm truncate"></p>
 
-                <div class="mt-4 pt-4 border-t border-gray-700">
-                    <h3 class="text-lg font-semibold mb-2 text-white">Loại trừ các file/thư mục:</h3>
-                    <div id="filter-container" class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-sm text-gray-300">
-                        <div><label class="inline-flex items-center"><input type="checkbox" data-ext="json,xml,csv,sql,log" class="filter-cb"> Data & Logs</label></div>
-                        <div><label class="inline-flex items-center"><input type="checkbox" data-ext="md,txt,pdf" class="filter-cb"> Docs & Text</label></div>
-                        <div><label class="inline-flex items-center"><input type="checkbox" data-ext="env" class="filter-cb"> .env files</label></div>
-                        <div><label class="inline-flex items-center"><input type="checkbox" data-ext="png,jpg,jpeg,gif,svg,ico" class="filter-cb"> Images</label></div>
-                        <div><label class="inline-flex items-center"><input type="checkbox" data-ext="wav,mp3,ogg" class="filter-cb"> Audio</label></div>
-                        <div><label class="inline-flex items-center"><input type="checkbox" data-ext="mp4,mov,webm" class="filter-cb"> Video</label></div>
-                        <div><label class="inline-flex items-center"><input type="checkbox" data-ext="woff,woff2,ttf,eot" class="filter-cb"> Fonts</label></div>
-                        <div><label class="inline-flex items-center"><input type="checkbox" data-ext="lock,mod,sum" class="filter-cb"> Lockfiles</label></div>
-                        <div><label class="inline-flex items-center"><input type="checkbox" data-folder="node_modules" class="filter-cb"> node_modules</label></div>
-                        <div><label class="inline-flex items-center"><input type="checkbox" data-folder="dist,build,out,target" class="filter-cb"> Build Output</label></div>
-                        <div><label class="inline-flex items-center"><input type="checkbox" data-folder=".git,.vscode,.idea" class="filter-cb"> Git/IDE Folders</label></div>
-                        <div><label class="inline-flex items-center"><input type="checkbox" data-ext="gitignore,gitattributes" class="filter-cb"> Git Files</label></div>
-                    </div>
+                <div id="progress-container" class="w-full bg-gray-700 rounded-full h-2.5 mt-3 hidden">
+                    <div id="progress-bar" class="bg-indigo-500 h-2.5 rounded-full" style="width:0%"></div>
                 </div>
-
-                <div class="mt-4 flex-grow overflow-auto pr-2 custom-scrollbar">
-                    <h2 class="text-xl font-semibold mb-3 text-white border-b border-gray-700 pb-2">Cấu trúc thư mục</h2>
-                    <div id="file-tree">
-                        <p class="text-gray-500">Chưa có file nào được chọn...</p>
-                    </div>
-                </div>
+                <p id="progress-text" class="text-center text-sm text-gray-400 mt-1"></p>
             </div>
 
-            <div class="bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col h-[85vh]">
-                <div class="flex-shrink-0">
-                    <button id="get-markdown-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center gap-2" disabled>
-                        <span id="btn-text">🚀 Tạo Markdown</span>
-                        <svg id="loading-spinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                    </button>
-                    <div class="flex justify-between items-center mt-4">
-                         <button id="copy-btn" class="w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 flex items-center gap-2 disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path><path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2H6zM8 7a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1zm0 4a1 1 0 112 0 1 1 0 01-2 0zm0 4a1 1 0 102 0 1 1 0 00-2 0z"></path></svg>
-                            <span id="copy-btn-text">Sao chép</span>
-                        </button>
-                        <p id="token-count" class="text-gray-400 text-sm font-mono">Tokens: 0</p>
-                    </div>
+            <div class="mt-4 pt-4 border-t border-gray-700">
+                <h3 class="text-lg font-semibold mb-2 text-white">Loại trừ các file/thư mục:</h3>
+                <div id="filter-container" class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-sm text-gray-300">
+                    <div><label class="inline-flex items-center"><input type="checkbox" data-ext="json,xml,csv,sql,log" class="filter-cb"> Data & Logs</label></div>
+                    <div><label class="inline-flex items-center"><input type="checkbox" data-ext="md,txt,pdf" class="filter-cb"> Docs & Text</label></div>
+                    <div><label class="inline-flex items-center"><input type="checkbox" data-ext="env" class="filter-cb"> .env files</label></div>
+                    <!-- Images đã thêm webp,avif -->
+                    <div><label class="inline-flex items-center"><input type="checkbox" data-ext="png,jpg,jpeg,gif,svg,ico,webp,avif" class="filter-cb"> Images</label></div>
+                    <div><label class="inline-flex items-center"><input type="checkbox" data-ext="wav,mp3,ogg" class="filter-cb"> Audio</label></div>
+                    <div><label class="inline-flex items-center"><input type="checkbox" data-ext="mp4,mov,webm" class="filter-cb"> Video</label></div>
+                    <div><label class="inline-flex items-center"><input type="checkbox" data-ext="woff,woff2,ttf,eot" class="filter-cb"> Fonts</label></div>
+                    <div><label class="inline-flex items-center"><input type="checkbox" data-ext="lock,mod,sum" class="filter-cb"> Lockfiles</label></div>
+                    <div><label class="inline-flex items-center"><input type="checkbox" data-folder="node_modules" class="filter-cb"> node_modules</label></div>
+                    <div><label class="inline-flex items-center"><input type="checkbox" data-folder="dist,build,out,target" class="filter-cb"> Build Output</label></div>
+                    <div><label class="inline-flex items-center"><input type="checkbox" data-folder=".git,.vscode,.idea" class="filter-cb"> Git/IDE Folders</label></div>
+                    <div><label class="inline-flex items-center"><input type="checkbox" data-ext="gitignore,gitattributes" class="filter-cb"> Git Files</label></div>
                 </div>
 
-                <div class="mt-4 flex-grow relative">
-                    <textarea id="markdown-output" class="w-full h-full bg-gray-900 border border-gray-700 rounded-lg p-4 text-gray-300 font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 custom-scrollbar" readonly placeholder="Nội dung Markdown sẽ xuất hiện ở đây..."></textarea>
+                <!-- Tùy chỉnh loại trừ -->
+                <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input id="custom-ext-input" class="input-dark" type="text" placeholder="Đuôi file tùy chỉnh: .json, .txt, .csv">
+                    <input id="custom-folder-input" class="input-dark" type="text" placeholder="Thư mục tùy chỉnh: node_modules, .cache">
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Nhập nhiều mục, cách nhau bởi dấu phẩy.</p>
+            </div>
+
+            <div class="mt-4 flex-grow overflow-auto pr-2 custom-scrollbar">
+                <h2 class="text-xl font-semibold mb-3 text-white border-b border-gray-700 pb-2">Cấu trúc thư mục</h2>
+                <div id="file-tree">
+                    <p class="text-gray-500">Chưa có file nào được chọn...</p>
                 </div>
             </div>
         </div>
+
+        <!-- RIGHT -->
+        <div class="bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col h-[85vh]">
+            <div class="flex-shrink-0">
+                <button id="get-markdown-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center gap-2" disabled>
+                    <span id="btn-text">🚀 Tạo Markdown</span>
+                    <svg id="loading-spinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+                <div class="flex justify-between items-center mt-4">
+                    <button id="copy-btn" class="w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 flex items-center gap-2 disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path><path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2H6zM8 7a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1zm0 4a1 1 0 112 0 1 1 0 01-2 0zm0 4a1 1 0 102 0 1 1 0 00-2 0z"></path></svg>
+                        <span id="copy-btn-text">Sao chép</span>
+                    </button>
+                    <p id="token-count" class="text-gray-400 text-sm font-mono">Tokens: 0</p>
+                </div>
+            </div>
+
+            <div class="mt-4 flex-grow relative">
+                <textarea id="markdown-output" class="w-full h-full bg-gray-900 border border-gray-700 rounded-lg p-4 text-gray-300 font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 custom-scrollbar" readonly placeholder="Nội dung Markdown sẽ xuất hiện ở đây..."></textarea>
+            </div>
+        </div>
     </div>
+</div>
 
 <script>
-    // DOM Elements
-    const zipFileInput = document.getElementById('zip-file-input');
-    const folderScanBtn = document.getElementById('folder-scan-btn');
-    const folderInput = document.getElementById('folder-input');
-    const fileNameDisplay = document.getElementById('file-name');
-    const fileTreeContainer = document.getElementById('file-tree');
-    const getMarkdownBtn = document.getElementById('get-markdown-btn');
-    const markdownOutput = document.getElementById('markdown-output');
-    const copyBtn = document.getElementById('copy-btn');
-    const tokenCountDisplay = document.getElementById('token-count');
-    const filterContainer = document.getElementById('filter-container');
-    const loadingSpinner = document.getElementById('loading-spinner');
-    const btnText = document.getElementById('btn-text');
-    const copyBtnText = document.getElementById('copy-btn-text');
-    const progressContainer = document.getElementById('progress-container');
-    const progressBar = document.getElementById('progress-bar');
-    const progressText = document.getElementById('progress-text');
+/* ============ DOM refs ============ */
+const zipFileInput = document.getElementById('zip-file-input');
+const folderScanBtn = document.getElementById('folder-scan-btn');
+const folderInput = document.getElementById('folder-input');
+const fileNameDisplay = document.getElementById('file-name');
+const fileTreeContainer = document.getElementById('file-tree');
+const getMarkdownBtn = document.getElementById('get-markdown-btn');
+const markdownOutput = document.getElementById('markdown-output');
+const copyBtn = document.getElementById('copy-btn');
+const tokenCountDisplay = document.getElementById('token-count');
+const filterContainer = document.getElementById('filter-container');
+const loadingSpinner = document.getElementById('loading-spinner');
+const btnText = document.getElementById('btn-text');
+const copyBtnText = document.getElementById('copy-btn-text');
+const progressContainer = document.getElementById('progress-container');
+const progressBar = document.getElementById('progress-bar');
+const progressText = document.getElementById('progress-text');
+const customExtInput = document.getElementById('custom-ext-input');
+const customFolderInput = document.getElementById('custom-folder-input');
 
-    let fileContents = new Map();
+let fileContents = new Map();
 
-    // --- Event Listeners ---
-    zipFileInput.addEventListener('change', handleZipFileSelect);
-    folderScanBtn.addEventListener('click', () => folderInput.click());
-    folderInput.addEventListener('change', handleFolderSelect);
+/* ============ Events ============ */
+zipFileInput.addEventListener('change', handleZipFileSelect);
+folderScanBtn.addEventListener('click', () => folderInput.click());
+folderInput.addEventListener('change', handleFolderSelect);
+getMarkdownBtn.addEventListener('click', generateMarkdown);
+copyBtn.addEventListener('click', copyMarkdown);
+filterContainer.addEventListener('change', handleFilterChange);
+customExtInput.addEventListener('input', handleFilterChange);
+customFolderInput.addEventListener('input', handleFilterChange);
 
-    getMarkdownBtn.addEventListener('click', generateMarkdown);
-    copyBtn.addEventListener('click', copyMarkdown);
-    filterContainer.addEventListener('change', handleFilterChange);
+fileTreeContainer.addEventListener('click', (e) => {
+    const folderLabel = e.target.closest('.folder-label');
+    if (folderLabel) toggleFolder(folderLabel);
+});
+fileTreeContainer.addEventListener('change', (e) => {
+    if (e.target.type === 'checkbox') handleCheckboxChange(e.target);
+});
 
-    fileTreeContainer.addEventListener('click', (e) => {
-        const folderLabel = e.target.closest('.folder-label');
-        if (folderLabel) {
-            toggleFolder(folderLabel);
-        }
-    });
-    fileTreeContainer.addEventListener('change', (e) => {
-        if (e.target.type === 'checkbox') {
-            handleCheckboxChange(e.target);
-        }
-    });
+/* ============ Progress UI ============ */
+function showProgress(percent, text){
+    progressContainer.classList.remove('hidden');
+    progressBar.style.width = `${percent}%`;
+    progressText.textContent = text || `Đang tải... ${percent.toFixed(0)}%`;
+}
+function hideProgress(){
+    progressContainer.classList.add('hidden');
+    progressText.textContent = '';
+}
 
-    // --- Core Processing Functions ---
-
-    function showProgress(percent, text) {
-        progressContainer.classList.remove('hidden');
-        progressBar.style.width = `${percent}%`;
-        progressText.textContent = text || `Đang tải... ${percent.toFixed(0)}%`;
+/* ============ Load ZIP ============ */
+async function handleZipFileSelect(event){
+    const file = event.target.files[0];
+    if(!file || !file.name.endsWith('.zip')){
+        alert('Vui lòng chọn một file .zip!');
+        return;
     }
+    resetUI();
+    fileNameDisplay.textContent = `File: ${file.name}`;
+    fileTreeContainer.innerHTML = '<p class="text-gray-500">Đang đọc file ZIP...</p>';
 
-    function hideProgress() {
-        progressContainer.classList.add('hidden');
-        progressText.textContent = '';
-    }
-
-    async function handleZipFileSelect(event) {
-        const file = event.target.files[0];
-        if (!file || !file.name.endsWith('.zip')) {
-            alert('Vui lòng chọn một file có định dạng .zip!');
-            return;
-        }
-        resetUI();
-        fileNameDisplay.textContent = `File: ${file.name}`;
-        fileTreeContainer.innerHTML = '<p class="text-gray-500">Đang đọc file ZIP...</p>';
-
-        try {
-            const zip = await JSZip.loadAsync(file, {
-                // NEW: Progress callback
-                update: function(metadata) {
-                    const percent = metadata.percent;
-                    showProgress(percent, `Đang giải nén... ${percent.toFixed(0)}%`);
-                }
-            });
-
-            fileContents.clear();
-            const readPromises = [];
-            const filesToRead = Object.values(zip.files).filter(f => !f.dir);
-            let filesRead = 0;
-
-            showProgress(0, 'Bắt đầu đọc nội dung file...');
-            
-            for (const zipEntry of filesToRead) {
-                readPromises.push(
-                    zipEntry.async('string')
-                        .catch(() => '/*Nội dung nhị phân, không thể hiển thị*/')
-                        .then(content => {
-                            fileContents.set(zipEntry.name, content);
-                            filesRead++;
-                            const percent = (filesRead / filesToRead.length) * 100;
-                            showProgress(percent, `Đã đọc ${filesRead}/${filesToRead.length} files...`);
-                        })
-                );
+    try{
+        const zip = await JSZip.loadAsync(file, {
+            update: (metadata) => {
+                const percent = metadata.percent;
+                showProgress(percent, `Đang giải nén... ${percent.toFixed(0)}%`);
             }
-            await Promise.all(readPromises);
-            
-            finishProcessing(file.name);
-
-        } catch (error) {
-            console.error('Lỗi khi đọc file ZIP:', error);
-            fileNameDisplay.textContent = 'Lỗi! Không thể đọc file ZIP.';
-            fileTreeContainer.innerHTML = '<p class="text-red-500">Đã xảy ra lỗi khi xử lý file.</p>';
-            hideProgress();
-        }
-    }
-
-    async function handleFolderSelect(event) {
-        const files = event.target.files;
-        if (!files || files.length === 0) {
-            return;
-        }
-        resetUI();
-        // The folder name is derived from the common base path of the files
-        const folderName = files[0].webkitRelativePath.split('/')[0];
-        fileNameDisplay.textContent = `Thư mục: ${folderName}`;
-        fileTreeContainer.innerHTML = '<p class="text-gray-500">Đang quét thư mục...</p>';
+        });
 
         fileContents.clear();
-        const readPromises = [];
+        const readPromises=[];
+        const filesToRead = Object.values(zip.files).filter(f => !f.dir);
         let filesRead = 0;
+        showProgress(0, 'Bắt đầu đọc nội dung file...');
 
-        showProgress(0, 'Bắt đầu quét các file...');
-
-        for (const file of files) {
-             readPromises.push(new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    fileContents.set(file.webkitRelativePath, reader.result);
-                    filesRead++;
-                    const percent = (filesRead / files.length) * 100;
-                    showProgress(percent, `Đã quét ${filesRead}/${files.length} files...`);
-                    resolve();
-                };
-                reader.onerror = () => {
-                    fileContents.set(file.webkitRelativePath, '/* Không thể đọc file */');
-                    filesRead++;
-                    const percent = (filesRead / files.length) * 100;
-                    showProgress(percent, `Đã quét ${filesRead}/${files.length} files...`);
-                    resolve(); // Resolve even on error to not block everything
-                };
-                reader.readAsText(file);
-            }));
+        for(const zipEntry of filesToRead){
+            readPromises.push(
+                zipEntry.async('string')
+                    .catch(()=>'/*Nội dung nhị phân, không thể hiển thị*/')
+                    .then(content=>{
+                        fileContents.set(zipEntry.name, content);
+                        filesRead++;
+                        const percent = (filesRead/filesToRead.length)*100;
+                        showProgress(percent, `Đã đọc ${filesRead}/${filesToRead.length} files...`);
+                    })
+            );
         }
-
-        try {
-            await Promise.all(readPromises);
-            finishProcessing(folderName);
-        } catch (error) {
-             console.error('Lỗi khi quét thư mục:', error);
-            fileNameDisplay.textContent = 'Lỗi! Không thể quét thư mục.';
-            fileTreeContainer.innerHTML = '<p class="text-red-500">Đã xảy ra lỗi khi xử lý thư mục.</p>';
-            hideProgress();
-        }
-    }
-
-    function finishProcessing(sourceName) {
-        renderFileTree();
-        fileNameDisplay.textContent = `Đã tải xong: ${sourceName}`;
-        getMarkdownBtn.disabled = false;
+        await Promise.all(readPromises);
+        finishProcessing(file.name);
+    }catch(err){
+        console.error(err);
+        fileNameDisplay.textContent = 'Lỗi! Không thể đọc file ZIP.';
+        fileTreeContainer.innerHTML = '<p class="text-red-500">Đã xảy ra lỗi khi xử lý file.</p>';
         hideProgress();
     }
+}
 
-    function handleFilterChange() {
-        if (fileContents.size > 0) {
-            renderFileTree();
+/* ============ Load Folder ============ */
+async function handleFolderSelect(event){
+    const files = event.target.files;
+    if(!files || files.length===0) return;
+
+    resetUI();
+    const folderName = files[0].webkitRelativePath.split('/')[0];
+    fileNameDisplay.textContent = `Thư mục: ${folderName}`;
+    fileTreeContainer.innerHTML = '<p class="text-gray-500">Đang quét thư mục...</p>';
+
+    fileContents.clear();
+    const readPromises=[];
+    let filesRead=0;
+
+    showProgress(0, 'Bắt đầu quét các file...');
+
+    for(const file of files){
+        readPromises.push(new Promise((resolve)=>{
+            const reader = new FileReader();
+            reader.onload = ()=>{
+                fileContents.set(file.webkitRelativePath, reader.result);
+                filesRead++;
+                const percent = (filesRead/files.length)*100;
+                showProgress(percent, `Đã quét ${filesRead}/${files.length} files...`);
+                resolve();
+            };
+            reader.onerror = ()=>{
+                fileContents.set(file.webkitRelativePath, '/* Không thể đọc file */');
+                filesRead++;
+                const percent = (filesRead/files.length)*100;
+                showProgress(percent, `Đã quét ${filesRead}/${files.length} files...`);
+                resolve();
+            };
+            reader.readAsText(file);
+        }));
+    }
+
+    try{
+        await Promise.all(readPromises);
+        finishProcessing(folderName);
+    }catch(err){
+        console.error(err);
+        fileNameDisplay.textContent = 'Lỗi! Không thể quét thư mục.';
+        fileTreeContainer.innerHTML = '<p class="text-red-500">Đã xảy ra lỗi khi xử lý thư mục.</p>';
+        hideProgress();
+    }
+}
+
+function finishProcessing(sourceName){
+    renderFileTree(true); // first render -> auto check all
+    fileNameDisplay.textContent = `Đã tải xong: ${sourceName}`;
+    getMarkdownBtn.disabled = false;
+    hideProgress();
+}
+
+/* ============ Filters ============ */
+function handleFilterChange(){
+    if(fileContents.size>0) renderFileTree(false); // giữ nguyên check hiện tại
+}
+
+function getCurrentExclusions(){
+    const excludedExtensions = new Set();
+    const excludedFolders   = new Set();
+
+    // từ checkbox nhóm
+    filterContainer.querySelectorAll('.filter-cb:checked').forEach(cb=>{
+        if(cb.dataset.ext) cb.dataset.ext.split(',').forEach(ext => excludedExtensions.add(ext.trim().toLowerCase()));
+        if(cb.dataset.folder) cb.dataset.folder.split(',').forEach(fd => excludedFolders.add(fd.trim()));
+    });
+
+    // từ input tùy chỉnh
+    const customExts = (customExtInput.value||'').split(',').map(s=>s.trim()).filter(Boolean);
+    customExts.forEach(ext=>{
+        const e = ext.startsWith('.') ? ext.slice(1) : ext;
+        excludedExtensions.add(e.toLowerCase());
+    });
+    const customFolders = (customFolderInput.value||'').split(',').map(s=>s.trim()).filter(Boolean);
+    customFolders.forEach(fd => excludedFolders.add(fd));
+
+    return { excludedExtensions, excludedFolders };
+}
+
+function isPathExcluded(path, excludedExtensions, excludedFolders){
+    const segments = path.split('/');
+    if(segments.some(seg => excludedFolders.has(seg))) return true;
+    const ext = path.includes('.') ? path.split('.').pop().toLowerCase() : '';
+    if(excludedExtensions.has(ext)) return true;
+    return false;
+}
+function isDirNameExcluded(dirName, excludedFolders){
+    return excludedFolders.has(dirName);
+}
+
+/* ============ Build + Render Tree UI ============ */
+function buildFileTreeObject(paths){
+    const tree={};
+    const sortedPaths = paths.slice().sort();
+    for(const path of sortedPaths){
+        if(path.startsWith('__MACOSX/') || !path) continue;
+        const parts = path.replace(/\/$/,'').split('/');
+        let cur = tree;
+        for(let i=0;i<parts.length;i++){
+            const part = parts[i];
+            if(!part) continue;
+            const isFile = (i===parts.length-1) && !path.endsWith('/');
+            if(!cur[part]) cur[part] = isFile ? null : {};
+            cur = cur[part];
         }
     }
+    return tree;
+}
 
-    function renderFileTree() {
-        if (fileContents.size === 0) return;
-        const paths = Array.from(fileContents.keys());
-        const tree = buildFileTreeObject(paths);
-        fileTreeContainer.innerHTML = ''; // Clear existing tree
-        const rootUl = document.createElement('ul');
-        buildTreeHtml(tree, rootUl);
-        fileTreeContainer.appendChild(rootUl);
-        applyFilters();
-    }
-    
-    // MODIFIED: Takes an array of paths instead of zip object
-    function buildFileTreeObject(paths) {
-        const tree = {};
-        const sortedPaths = paths.sort();
-        for (const path of sortedPaths) {
-            if (path.startsWith('__MACOSX/') || !path) continue; // Ignore macOS metadata and empty paths
-            
-            const parts = path.replace(/\/$/, '').split('/');
-            let currentLevel = tree;
-            for (let i = 0; i < parts.length; i++) {
-                const part = parts[i];
-                if(!part) continue;
+function buildTreeHtml(node, container, pathPrefix=''){
+    for(const key in node){
+        const fullPath = pathPrefix ? `${pathPrefix}/${key}` : key;
+        const isDirectory = node[key] !== null;
+        const isFile = node[key] === null;
 
-                // Check if this part represents a file
-                const isFile = (i === parts.length - 1) && !path.endsWith('/');
-                
-                if (!currentLevel[part]) {
-                    currentLevel[part] = isFile ? null : {};
-                }
-                currentLevel = currentLevel[part];
-            }
-        }
-        return tree;
-    }
+        const li = document.createElement('li');
+        li.id = `li-${fullPath.replace(/[^a-zA-Z0-9]/g,'-')}`;
 
+        const id = `cb-${fullPath.replace(/[^a-zA-Z0-9]/g,'-')}`;
+        const checkbox = `<input type="checkbox" id="${id}" class="form-checkbox h-4 w-4 bg-gray-700 border-gray-600 rounded text-indigo-500 focus:ring-indigo-500 cursor-pointer" data-path="${fullPath}" data-is-directory="${isDirectory ? 'true' : 'false'}">`;
 
-    function buildTreeHtml(node, container, pathPrefix = '') {
-        for (const key in node) {
-            const fullPath = pathPrefix ? `${pathPrefix}/${key}` : key;
-            const isDirectory = node[key] !== null && Object.keys(node[key]).length > 0;
-            const isFile = node[key] === null;
-
-            const li = document.createElement('li');
-            li.id = `li-${fullPath.replace(/[^a-zA-Z0-9]/g, '-')}`;
-
-            const id = `cb-${fullPath.replace(/[^a-zA-Z0-9]/g, '-')}`;
-            const checkbox = `<input type="checkbox" id="${id}" class="form-checkbox h-4 w-4 bg-gray-700 border-gray-600 rounded text-indigo-500 focus:ring-indigo-500 cursor-pointer" data-path="${fullPath}" data-is-directory="${isDirectory || !isFile}">`;
-
-            if (isDirectory) {
-                li.innerHTML = `
-                    <div class="flex items-center">
-                        ${checkbox}
-                        <div class="ml-2 flex-grow folder-label flex items-center">
-                            <span class="toggle-icon">▶</span>
-                            <span>📁 ${key}</span>
-                        </div>
+        if(isDirectory){
+            li.innerHTML = `
+                <div class="flex items-center">
+                    ${checkbox}
+                    <div class="ml-2 flex-grow folder-label flex items-center">
+                        <span class="toggle-icon">▶</span>
+                        <span>📁 ${key}</span>
                     </div>
-                `;
-                const ul = document.createElement('ul');
-                ul.classList.add('hidden'); // Collapse by default
-                buildTreeHtml(node[key], ul, fullPath);
-                li.appendChild(ul);
-            } else if (isFile) {
-                 li.innerHTML = `
-                    <div class="flex items-center">
-                        ${checkbox}
-                        <label for="${id}" class="ml-2 cursor-pointer">📄 ${key}</label>
-                    </div>
-                `;
+                </div>`;
+            const ul = document.createElement('ul');
+            ul.classList.add('hidden');
+            buildTreeHtml(node[key], ul, fullPath);
+            li.appendChild(ul);
+        }else if(isFile){
+            li.innerHTML = `
+                <div class="flex items-center">
+                    ${checkbox}
+                    <label for="${id}" class="ml-2 cursor-pointer">📄 ${key}</label>
+                </div>`;
+        }
+        container.appendChild(li);
+    }
+}
+
+function renderFileTree(firstRender=false){
+    const paths = Array.from(fileContents.keys());
+    const prevChecked = new Set(
+        Array.from(fileTreeContainer.querySelectorAll('input[type="checkbox"]:checked'))
+            .map(cb => cb.dataset.path)
+    );
+
+    const tree = buildFileTreeObject(paths);
+    fileTreeContainer.innerHTML='';
+    const rootUl = document.createElement('ul');
+    buildTreeHtml(tree, rootUl);
+    fileTreeContainer.appendChild(rootUl);
+
+    // Default check all on first render, else restore previous
+    const allCbs = Array.from(fileTreeContainer.querySelectorAll('input[type="checkbox"]'));
+    if(firstRender || prevChecked.size===0){
+        allCbs.forEach(cb => { cb.checked = true; cb.indeterminate = false; });
+    }else{
+        allCbs.forEach(cb => {
+            cb.checked = prevChecked.has(cb.dataset.path);
+        });
+    }
+
+    applyFilters();
+}
+
+/* Đánh dấu list-only theo filter, không thay đổi check */
+function applyFilters(){
+    const { excludedExtensions, excludedFolders } = getCurrentExclusions();
+
+    fileTreeContainer.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+        const path = cb.dataset.path;
+        const isDirectory = cb.dataset.isDirectory === 'true';
+        let listOnly = false;
+
+        if(isDirectory){
+            const folderName = path.split('/').pop();
+            listOnly = isDirNameExcluded(folderName, excludedFolders);
+        }else{
+            listOnly = isPathExcluded(path, excludedExtensions, excludedFolders);
+        }
+        cb.dataset.listOnly = listOnly ? 'true' : 'false';
+
+        const li = cb.closest('li');
+        if(listOnly) li.classList.add('opacity-60'); else li.classList.remove('opacity-60');
+    });
+
+    // cập nhật trạng thái cha/con
+    const allCheckboxes = Array.from(fileTreeContainer.querySelectorAll('input[type="checkbox"]'));
+    allCheckboxes.reverse().forEach(cb => updateParentCheckboxes(cb));
+}
+
+/* ============ Tree UI interactions ============ */
+function handleCheckboxChange(checkbox){
+    const isChecked = checkbox.checked;
+    const isDirectory = checkbox.dataset.isDirectory === 'true';
+    if(isDirectory){
+        const li = checkbox.closest('li');
+        li.querySelectorAll('input[type="checkbox"]').forEach(childCb=>{
+            if(childCb!==checkbox){
+                childCb.checked = isChecked;
+                childCb.indeterminate = false;
             }
-            if(isDirectory || isFile) {
-                container.appendChild(li);
-            }
+        });
+    }
+    updateParentCheckboxes(checkbox);
+}
+function updateParentCheckboxes(checkbox){
+    const parentLi = checkbox.closest('ul')?.closest('li');
+    if(!parentLi) return;
+    const parentCheckbox = parentLi.querySelector('input[type="checkbox"]');
+    const childCheckboxes = Array.from(parentLi.querySelector('ul').children).map(li => li.querySelector('input[type="checkbox"]'));
+    if(childCheckboxes.length>0){
+        const checkedCount = childCheckboxes.filter(cb=>cb.checked).length;
+        const indCount = childCheckboxes.filter(cb=>cb.indeterminate).length;
+        if(checkedCount===0 && indCount===0){
+            parentCheckbox.checked=false; parentCheckbox.indeterminate=false;
+        }else if(checkedCount===childCheckboxes.length){
+            parentCheckbox.checked=true; parentCheckbox.indeterminate=false;
+        }else{
+            parentCheckbox.checked=false; parentCheckbox.indeterminate=true;
+        }
+        updateParentCheckboxes(parentCheckbox);
+    }
+}
+function toggleFolder(labelElement){
+    const li = labelElement.closest('li');
+    const ul = li.querySelector('ul');
+    const icon = labelElement.querySelector('.toggle-icon');
+    if(ul){
+        const isHidden = ul.classList.toggle('hidden');
+        icon.textContent = isHidden ? '▶' : '▼';
+    }
+}
+
+/* ============ ASCII Tree with collapsing for excluded ============ */
+function buildTreeFromPaths(paths){
+    const tree={};
+    for(const p of paths){
+        const parts = p.split('/');
+        let cur = tree;
+        for(let i=0;i<parts.length;i++){
+            const part = parts[i];
+            const isFile = i===parts.length-1;
+            if(!cur[part]) cur[part] = isFile ? null : {};
+            if(!isFile) cur = cur[part];
         }
     }
+    return tree;
+}
 
+/* condense list: if >3 items -> [first, second, 'ELLIPSIS', last] */
+const ELLIPSIS = '........................';
+function condense(list){
+    if(list.length<=3) return list.slice();
+    return [list[0], list[1], ELLIPSIS, list[list.length-1]];
+}
 
-    function applyFilters() {
-        const excludedExtensions = new Set();
-        const excludedFolders = new Set();
-        filterContainer.querySelectorAll('.filter-cb:checked').forEach(cb => {
-            if (cb.dataset.ext) cb.dataset.ext.split(',').forEach(ext => excludedExtensions.add(ext.trim()));
-            if (cb.dataset.folder) cb.dataset.folder.split(',').forEach(folder => excludedFolders.add(folder.trim()));
-        });
-        
-        fileTreeContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            const path = cb.dataset.path;
-            const isDirectory = cb.dataset.isDirectory === 'true';
-            let shouldBeUnchecked = false;
+function treeToAscii(node, basePath, prefix, excludedExtensions, excludedFolders){
+    // Sort: dirs first, then files; alpha asc inside each
+    const keys = Object.keys(node).sort((a,b)=>{
+        const aDir = node[a] !== null, bDir = node[b] !== null;
+        if(aDir!==bDir) return aDir ? -1 : 1;
+        return a.localeCompare(b);
+    });
 
-            if (isDirectory) {
-                const folderName = path.split('/').pop();
-                if (excludedFolders.has(folderName)) {
-                    shouldBeUnchecked = true;
-                }
-            } else {
-                const fileExt = path.split('.').pop().toLowerCase();
-                if (excludedExtensions.has(fileExt)) {
-                    shouldBeUnchecked = true;
-                }
-            }
+    // Split children
+    const dirKeys = keys.filter(k => node[k] !== null);
+    const fileKeys = keys.filter(k => node[k] === null);
 
-            cb.checked = !shouldBeUnchecked;
-        });
-
-        // After setting initial state, update all parent checkboxes from bottom up
-        const allCheckboxes = Array.from(fileTreeContainer.querySelectorAll('input[type="checkbox"]'));
-        allCheckboxes.reverse().forEach(cb => updateParentCheckboxes(cb));
+    // Included vs excluded for files
+    const includedFiles = [];
+    const excludedFiles = [];
+    for(const k of fileKeys){
+        const p = basePath ? `${basePath}/${k}` : k;
+        if(isPathExcluded(p, excludedExtensions, excludedFolders)) excludedFiles.push(k);
+        else includedFiles.push(k);
     }
 
+    // Compose items in order
+    const items = [];
+    // Directories first
+    dirKeys.forEach(k => items.push({type:'dir', name:k}));
+    // Then included files (full)
+    includedFiles.forEach(k => items.push({type:'file', name:k}));
+    // Then excluded files (condensed)
+    const excludedDisplay = condense(excludedFiles);
+    excludedDisplay.forEach(k => {
+        if(k===ELLIPSIS) items.push({type:'ellipsis'});
+        else items.push({type:'file', name:k, excluded:true});
+    });
 
-    function handleCheckboxChange(checkbox) {
-        const isChecked = checkbox.checked;
-        const isDirectory = checkbox.dataset.isDirectory === 'true';
+    let out='';
 
-        // Downward cascade: Check/uncheck all children if a directory is changed
-        if (isDirectory) {
-            const li = checkbox.closest('li');
-            li.querySelectorAll('input[type="checkbox"]').forEach(childCb => {
-                if (childCb !== checkbox) {
-                    childCb.checked = isChecked;
-                    childCb.indeterminate = false;
+    items.forEach((it, idx)=>{
+        const isLast = idx===items.length-1;
+        const branch = isLast ? '└── ' : '├── ';
+        if(it.type==='dir'){
+            const dirName = it.name;
+            const line = `${prefix}${branch}${dirName}/\n`;
+            out += line;
+
+            const childPrefix = prefix + (isLast ? '    ' : '│   ');
+            const childPath = basePath ? `${basePath}/${dirName}` : dirName;
+            const isExcludedDir = isDirNameExcluded(dirName, excludedFolders);
+
+            if(isExcludedDir){
+                // Condense this folder's children shallowly
+                const childKeys = Object.keys(node[dirName]).sort((a,b)=>{
+                    const aDir = node[dirName][a] !== null, bDir = node[dirName][b] !== null;
+                    if(aDir!==bDir) return aDir ? -1 : 1;
+                    return a.localeCompare(b);
+                });
+                const show = condense(childKeys);
+                show.forEach((ck, jdx)=>{
+                    const lastChild = jdx===show.length-1;
+                    const br2 = lastChild ? '└── ' : '├── ';
+                    if(ck===ELLIPSIS){
+                        out += `${childPrefix}${br2}${ELLIPSIS}\n`;
+                    }else{
+                        const isDirChild = node[dirName][ck] !== null;
+                        out += `${childPrefix}${br2}${isDirChild ? ck+'/' : ck}\n`;
+                    }
+                });
+                // do not recurse deeper
+            }else{
+                // normal recurse
+                out += treeToAscii(node[dirName], childPath, childPrefix, excludedExtensions, excludedFolders);
+            }
+        }else if(it.type==='file'){
+            out += `${prefix}${branch}${it.name}\n`;
+        }else if(it.type==='ellipsis'){
+            out += `${prefix}${branch}${ELLIPSIS}\n`;
+        }
+    });
+
+    return out;
+}
+
+/* ============ Markdown generation ============ */
+function generateMarkdown(){
+    setLoading(true);
+    setTimeout(()=>{
+        const { excludedExtensions, excludedFolders } = getCurrentExclusions();
+
+        // All checked FILES
+        const checkedFiles = Array.from(fileTreeContainer.querySelectorAll('input[type="checkbox"]:checked'))
+            .filter(cb => cb.dataset.isDirectory === 'false')
+            .map(cb => cb.dataset.path)
+            .sort();
+
+        // If nothing checked -> empty
+        let markdownString='';
+
+        // --- Part 1: Sơ đồ thư mục (trên toàn bộ file đã chọn) ---
+        if(checkedFiles.length>0){
+            const tree = buildTreeFromPaths(checkedFiles);
+            const ascii = treeToAscii(tree, '', '', excludedExtensions, excludedFolders);
+            markdownString += `### Sơ đồ thư mục\n\n\`\`\`\n${ascii.trim()}\n\`\`\`\n\n`;
+        }else{
+            markdownString += `### Sơ đồ thư mục\n\n_(Không có file nào được chọn)_\n\n`;
+        }
+
+        // --- Split included vs excluded (files) ---
+        const includedFiles = [];
+        const excludedFiles = [];
+        for(const path of checkedFiles){
+            if(isPathExcluded(path, excludedExtensions, excludedFolders)) excludedFiles.push(path);
+            else includedFiles.push(path);
+        }
+
+        // --- Part 2: Nội dung từng file (CHỈ included) ---
+        for(const path of includedFiles){
+            const content = (fileContents.get(path) || '').toString();
+            const language = getLanguage(path);
+            markdownString += `File: \`${path}\`\n\n\`\`\`${language}\n${content.trim()}\n\`\`\`\n\n`;
+        }
+
+        // --- Part 3: Liệt kê BỊ LOẠI TRỪ ở CUỐI ---
+        if(excludedFiles.length>0){
+            // Thu thập thư mục bị loại trừ (root path đến thư mục khớp)
+            const excludedFolderSet = new Set();
+            excludedFiles.forEach(p=>{
+                const parts = p.split('/');
+                for(let i=0;i<parts.length;i++){
+                    const seg = parts[i];
+                    if(excludedFolders.has(seg)){
+                        const folderPath = parts.slice(0, i+1).join('/')+'/';
+                        excludedFolderSet.add(folderPath);
+                        break;
+                    }
                 }
             });
-        }
-        
-        updateParentCheckboxes(checkbox);
-    }
 
-    function updateParentCheckboxes(checkbox) {
-        const parentLi = checkbox.closest('ul')?.closest('li');
-        if (!parentLi) return;
+            markdownString += `### Các tệp/thư mục bị loại trừ (chỉ liệt kê)\n\n`;
 
-        const parentCheckbox = parentLi.querySelector('input[type="checkbox"]');
-        const childCheckboxes = Array.from(parentLi.querySelector('ul').children).map(li => li.querySelector('input[type="checkbox"]'));
-
-        if (childCheckboxes.length > 0) {
-            const checkedCount = childCheckboxes.filter(cb => cb.checked).length;
-            const indeterminateCount = childCheckboxes.filter(cb => cb.indeterminate).length;
-            
-            if (checkedCount === 0 && indeterminateCount === 0) {
-                parentCheckbox.checked = false;
-                parentCheckbox.indeterminate = false;
-            } else if (checkedCount === childCheckboxes.length) {
-                parentCheckbox.checked = true;
-                parentCheckbox.indeterminate = false;
-            } else {
-                parentCheckbox.checked = false;
-                parentCheckbox.indeterminate = true;
-            }
-            updateParentCheckboxes(parentCheckbox); // Recurse up the tree
-        }
-    }
-    
-    function toggleFolder(labelElement) {
-        const li = labelElement.closest('li');
-        const ul = li.querySelector('ul');
-        const icon = labelElement.querySelector('.toggle-icon');
-        if (ul) {
-            const isHidden = ul.classList.toggle('hidden');
-            icon.textContent = isHidden ? '▶' : '▼';
-        }
-    }
-    
-    function generateMarkdown() {
-        setLoading(true);
-        setTimeout(() => {
-            let markdownString = '';
-            const filePaths = Array.from(fileTreeContainer.querySelectorAll('input[type="checkbox"]:checked'))
-                .filter(cb => cb.dataset.isDirectory === 'false')
-                .map(cb => cb.dataset.path)
-                .sort();
-            
-            for (const path of filePaths) {
-                const content = fileContents.get(path) || '';
-                const language = getLanguage(path);
-                //  MODIFIED LINE: Added "File: " before the path
-                markdownString += `File: \`${path}\`\n\n\`\`\`${language}\n${content.trim()}\n\`\`\`\n\n`;
+            if(excludedFolderSet.size>0){
+                markdownString += `**Thư mục:**\n\n\`\`\`\n`;
+                Array.from(excludedFolderSet).sort().forEach(fd => { markdownString += `${fd}\n`; });
+                markdownString += `\`\`\`\n\n`;
             }
 
-            markdownOutput.value = markdownString.trim();
-            updateTokenCount(markdownString);
-            copyBtn.disabled = markdownString.length === 0;
-            setLoading(false);
-        }, 50);
-    }
-    
-    // --- UI & Utility Functions ---
-    function resetUI() {
+            markdownString += `**Tệp:**\n\n\`\`\`\n`;
+            excludedFiles.forEach(p=>{ markdownString += `${p}\n`; });
+            markdownString += `\`\`\`\n`;
+        }
+
+        markdownOutput.value = markdownString.trim();
+        updateTokenCount(markdownString);
+        copyBtn.disabled = markdownString.length === 0;
+        setLoading(false);
+    },50);
+}
+
+/* ============ UI Utils ============ */
+function resetUI(){
+    getMarkdownBtn.disabled = true;
+    copyBtn.disabled = true;
+    markdownOutput.value='';
+    tokenCountDisplay.textContent='Tokens: 0';
+    fileNameDisplay.textContent='';
+    fileTreeContainer.innerHTML='<p class="text-gray-500">Chọn file hoặc thư mục để bắt đầu...</p>';
+    hideProgress();
+}
+function setLoading(isLoading){
+    if(isLoading){
+        btnText.classList.add('hidden');
+        loadingSpinner.classList.remove('hidden');
         getMarkdownBtn.disabled = true;
-        copyBtn.disabled = true;
-        markdownOutput.value = '';
-        tokenCountDisplay.textContent = 'Tokens: 0';
-        fileNameDisplay.textContent = '';
-        fileTreeContainer.innerHTML = '<p class="text-gray-500">Chọn file hoặc thư mục để bắt đầu...</p>';
-        hideProgress();
+    }else{
+        btnText.classList.remove('hidden');
+        loadingSpinner.classList.add('hidden');
+        getMarkdownBtn.disabled = fileContents.size===0;
     }
-
-    function setLoading(isLoading) {
-        if (isLoading) {
-            btnText.classList.add('hidden');
-            loadingSpinner.classList.remove('hidden');
-            getMarkdownBtn.disabled = true;
-        } else {
-            btnText.classList.remove('hidden');
-            loadingSpinner.classList.add('hidden');
-            getMarkdownBtn.disabled = fileContents.size === 0;
-        }
-    }
-
-    function updateTokenCount(text) {
-        if (!text) {
-            tokenCountDisplay.textContent = 'Tokens: 0';
-            return;
-        }
-        const tokens = text.split(/\s+|[.,;!?()\[\]{}]/).filter(Boolean);
-        tokenCountDisplay.textContent = `Tokens: ~${tokens.length}`;
-    }
-
-    function copyMarkdown() {
-        if (!markdownOutput.value) return;
-        navigator.clipboard.writeText(markdownOutput.value).then(() => {
-            copyBtnText.textContent = `✅ Đã sao chép!`;
-            setTimeout(() => { copyBtnText.textContent = `Sao chép`; }, 2000);
-        }).catch(err => alert('Lỗi khi sao chép: ', err));
-    }
-
-    function getLanguage(filename) {
-        const extension = filename.split('.').pop().toLowerCase();
-        const langMap = {
-            js: 'javascript', ts: 'typescript', jsx: 'jsx', tsx: 'tsx',
-            py: 'python', java: 'java', c: 'c', cpp: 'cpp', cs: 'csharp',
-            html: 'html', css: 'css', scss: 'scss',
-            json: 'json', md: 'markdown', yml: 'yaml', yaml: 'yaml',
-            sh: 'shell', bash: 'bash',
-            sql: 'sql', go: 'go', rs: 'rust', php: 'php', rb: 'ruby',
-            kt: 'kotlin', swift: 'swift', dockerfile: 'dockerfile'
-        };
-        return langMap[extension] || '';
-    }
-
+}
+function updateTokenCount(text){
+    if(!text){ tokenCountDisplay.textContent='Tokens: 0'; return; }
+    const tokens = text.split(/\s+|[.,;!?()\[\]{}]/).filter(Boolean);
+    tokenCountDisplay.textContent = `Tokens: ~${tokens.length}`;
+}
+function copyMarkdown(){
+    if(!markdownOutput.value) return;
+    navigator.clipboard.writeText(markdownOutput.value).then(()=>{
+        copyBtnText.textContent='✅ Đã sao chép!';
+        setTimeout(()=>{ copyBtnText.textContent='Sao chép'; }, 2000);
+    }).catch(err=>alert('Lỗi khi sao chép: '+err));
+}
+function getLanguage(filename){
+    const extension = filename.split('.').pop().toLowerCase();
+    const map = {
+        js:'javascript', ts:'typescript', jsx:'jsx', tsx:'tsx',
+        py:'python', java:'java', c:'c', cpp:'cpp', cs:'csharp',
+        html:'html', css:'css', scss:'scss',
+        json:'json', md:'markdown', yml:'yaml', yaml:'yaml',
+        sh:'shell', bash:'bash',
+        sql:'sql', go:'go', rs:'rust', php:'php', rb:'ruby',
+        kt:'kotlin', swift:'swift', dockerfile:'dockerfile'
+    };
+    return map[extension] || '';
+}
 </script>
 </body>
 </html>
